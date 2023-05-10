@@ -51,12 +51,12 @@ fun PermissionWasNotGrantedDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun AskForPermissionDialog(onCancel: () -> Unit, onProvide: () -> Unit) {
+fun AskForPermissionDialog(text: String, onCancel: () -> Unit, onProvide: () -> Unit) {
     AlertDialog(
         onDismissRequest = { onCancel() },
         properties = DialogProperties(dismissOnClickOutside = false),
         title = { Text("Glad to see you in our file manager!") },
-        text = { Text("You should provide permission for correct work of the app") },
+        text = { Text(text) },
         confirmButton = {
             Button(onClick = { onProvide() }) {
                 Text(

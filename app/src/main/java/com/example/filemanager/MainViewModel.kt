@@ -63,6 +63,8 @@ class MainViewModel @Inject constructor(
         val files = root.listFiles()
         files.sortFiles(type, order)
 
+        _changedFilesList.value.sortFiles(type, order)
+
         return files
     }
 
