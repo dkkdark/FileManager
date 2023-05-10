@@ -6,8 +6,8 @@
 
 Все файлы и сортировка
 
-![Screenshot_20230511-003221_FileManager](https://github.com/dkkdark/FileManager/assets/49618961/bb744568-420f-46bd-92ff-239131bb3337)
-![Screenshot_20230511-002012_FileManager](https://github.com/dkkdark/FileManager/assets/49618961/f699038c-eedb-4f71-a494-cdf83e9b5b90)
+<img width="253" alt="Снимок экрана 2023-05-11 в 01 04 37" src="https://github.com/dkkdark/FileManager/assets/49618961/7478686d-61d9-427f-a1f2-b71ce4346cda">
+<img width="257" alt="Снимок экрана 2023-05-11 в 01 04 49" src="https://github.com/dkkdark/FileManager/assets/49618961/d6ce7710-c612-4bfa-a74c-fd87a7b2a4e0">
 
 
 Для разных версий андроида предоставляются разрешения (MANAGE_EXTERNAL_STORAGE и READ_EXTERNAL_STORAGE)
@@ -23,7 +23,7 @@
 
 Возможность делиться
 
-![Screenshot_20230511-002031_Android System](https://github.com/dkkdark/FileManager/assets/49618961/8d377aa6-ad94-43ad-97ec-eaac0d4eb476)
+<img width="263" alt="Снимок экрана 2023-05-11 в 01 05 09" src="https://github.com/dkkdark/FileManager/assets/49618961/72490294-39e1-48df-a33e-691c0e48f2cc">
 
 
 Измененные с последнего открытия файлы. Первый раз туда загружаются все файлы, а после уже новые или измененные. Например, можно сделать фото и увидеть его в измененных
