@@ -11,12 +11,8 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,17 +27,12 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -64,12 +55,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,8 +66,6 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.navigation.NavController
-import androidx.navigation.NavHost
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -88,14 +73,10 @@ import com.example.filemanager.MainViewModel
 import com.example.filemanager.R
 import com.example.filemanager.data.FileManagerDataStoreInterface
 import com.example.filemanager.ui.theme.FileManagerTheme
-import com.example.filemanager.utils.Converters.findAppropriateDrawable
 import com.example.filemanager.utils.Routes
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import com.google.accompanist.permissions.shouldShowRationale
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import java.io.File
 import java.util.Locale
 import javax.inject.Inject
@@ -117,8 +98,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val mainViewModel = hiltViewModel<MainViewModel>()
                     val navController = rememberNavController()
+                    val firstEntry = fileManagerDataStore.readFirstEntranceVal.collectAsState(initial = false)
 
-                    NavHost(navController = navController, startDestination = Routes.Welcome.route) {
+                    NavHost(navController = navController, startDestination = if (firstEntry.value) Routes.Welcome.route else Routes.MainScreen.route) {
                         composable(Routes.MainScreen.route) {
                             MainScreen(
                                 mainViewModel,
@@ -131,8 +113,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Routes.Welcome.route) {
-                            WelcomeScreen(navController = navController)
-                            PermissionGrant(fileManagerDataStore, mainViewModel, grantPermission = {
+                            WelcomeScreen(navController = navController, mainViewModel)
+                            PermissionGrant(grantPermission = {
                                 grantPermission()
                             })
                         }
@@ -193,72 +175,31 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PermissionGrant(fileManagerDataStore: FileManagerDataStoreInterface, mainViewModel: MainViewModel, grantPermission: () -> Unit) {
+fun PermissionGrant(
+    grantPermission: () -> Unit
+) {
     var showWarnDialog by remember { mutableStateOf(false) }
-    val firstEntry = fileManagerDataStore.readFirstEntranceVal.collectAsState(initial = false)
+    var showDialog by remember { mutableStateOf(true) }
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && firstEntry.value) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && showDialog) {
         AskForPermissionDialog(
             text = "Manage storage is important for this app. Please grant the permission.",
             onCancel = {
-                mainViewModel.saveFirstEntry()
+                showDialog = false
                 showWarnDialog = true
             },
             onProvide = {
-                mainViewModel.saveFirstEntry()
+                showDialog = false
                 grantPermission()
             }
         )
     }
-    else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && firstEntry.value) {
+    else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && showDialog) {
         FeatureThatRequiresReadExternalStoragePermission()
     }
 
     if (showWarnDialog)
         PermissionWasNotGrantedDialog(onDismiss = {showWarnDialog = false})
-}
-
-@Composable
-fun WelcomeScreen(navController: NavController) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.folder_management),
-            contentDescription = null,
-            modifier = Modifier.size(50.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Welcome!",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                navController.navigate(Routes.MainScreen.route) {
-                    popUpTo(Routes.Welcome.route) { inclusive = true }
-                }
-            },
-            shape = RoundedCornerShape(20.dp),
-            modifier = Modifier
-                .wrapContentSize()
-                .height(50.dp)
-        ) {
-            Text(
-                color = Color.White,
-                text = "GO",
-                fontSize = 16.sp
-            )
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -268,9 +209,12 @@ fun MainScreen(
     openFile: (file: File) -> Unit,
     shareFile: (file: File) -> Unit
 ) {
+    // path to files
     var path by remember { mutableStateOf("") }
+    // list for navigation
     val pathsList = remember { mutableStateListOf(path) }
 
+    // filter
     var selectedType by remember { mutableStateOf(0) }
     var selectedOrder by remember { mutableStateOf(0) }
 
@@ -280,14 +224,16 @@ fun MainScreen(
         mainViewModel.compareHashes(path)
         mainViewModel.saveHashes(path)
     }
+    // second tab, changed files
     val changedFiles = mainViewModel.changedFilesList.collectAsState()
-    changedFiles.value?.forEach { Log.d("qqq", "changedFiles $it") }
 
     var isFilterVisible by remember { mutableStateOf(false) }
+    // edit mode for share and info
     var editMode by remember { mutableStateOf<File?>(null) }
     var infoShow by remember { mutableStateOf(false) }
     var cardsNav by remember { mutableStateOf(ALL_FILES) }
 
+    // back button behavor
     var isOverrideBackPress by remember { mutableStateOf(false) }
 
     val idx = pathsList.indexOf(path) - 1
@@ -342,6 +288,7 @@ fun MainScreen(
                             openFile(file)
                         }
                         else {
+                            // for navigation
                             path = lpath
                             pathsList.add(path)
                         }
@@ -355,6 +302,7 @@ fun MainScreen(
         }
     }
 
+    // show info dialog
     if (infoShow)
         editMode?.let { InfoFileDialog(it,
             dismiss = {
@@ -385,30 +333,6 @@ private fun FeatureThatRequiresReadExternalStoragePermission() {
             }
         }
     )
-}
-
-@Composable
-fun FilesList(modifier: Modifier = Modifier,
-              files: Array<out File>,
-              editMode: File?,
-              onClick: (path: String, file: File) -> Unit,
-              onLongClick: (file: File) -> Unit) {
-    LazyVerticalGrid(
-        modifier = modifier.padding(8.dp),
-        columns = GridCells.Adaptive(minSize = 75.dp)
-    ) {
-        items(files.size) { idx ->
-            val file = files[idx]
-            FileItem(file, editMode == file,
-                onClick = {
-                    onClick(it, file)
-                },
-                onLongClick = {
-                    onLongClick(file)
-                }
-            )
-        }
-    }
 }
 
 @Composable
@@ -527,101 +451,6 @@ fun NavigationCard(title: String, onNavCardClick: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun FileItem(file: File, isEditMode: Boolean, onClick: (path: String) -> Unit, onLongClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .wrapContentSize()
-            .combinedClickable(
-                onClick = { onClick(file.absolutePath) },
-                onLongClick = {
-                    if (!file.isDirectory) {
-                        onLongClick()
-                    }
-                }
-            )
-            .background(if (isEditMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.background),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(id = file.findAppropriateDrawable()),
-            contentDescription = "file image"
-        )
-        Text(
-            text = file.name,
-            fontSize = 12.sp,
-            textAlign = TextAlign.Center,
-            maxLines = 2
-        )
-    }
-}
-
-@Composable
-fun FilterView(selectedType: Int, selectedOrder: Int, onTypeItemClick: (pos: Int) -> Unit, onOrderItemCLick: (pos: Int) -> Unit) {
-    val itemsType = listOf("Name", "Date", "Extension", "Size")
-    val itemsOrder = listOf("Descending", "Ascending")
-
-    Column(
-        modifier = Modifier
-            .wrapContentSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(top = 14.dp, start = 8.dp, end = 8.dp)
-    ) {
-        Text(
-            text = "Sort by",
-            modifier = Modifier
-                .align(Alignment.Start)
-                .padding(start = 8.dp),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            FilterItems(itemsType, selectedType) {
-                onTypeItemClick(it)
-            }
-            FilterItems(itemsOrder, selectedOrder) {
-                onOrderItemCLick(it)
-            }
-        }
-    }
-}
-
-@Composable
-fun FilterItems(items: List<String>, selected: Int, onClick: (index: Int) -> Unit) {
-    Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState())
-    ) {
-        items.forEachIndexed { index, item ->
-            Card(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .padding(8.dp)
-                    .clickable {
-                        onClick(index)
-                    },
-                colors = CardDefaults.cardColors(
-                    containerColor =
-                    if (selected == index) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.background
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    text = item,
-                    fontSize = 14.sp,
-                    color = if (selected == index) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
-                )
-            }
-
-        }
-    }
-}
 
 const val ALL_FILES = "ALL_FILES"
 const val CHANGED_FILES = "CHANGED_FILES"
