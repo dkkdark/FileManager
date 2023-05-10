@@ -98,9 +98,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val mainViewModel = hiltViewModel<MainViewModel>()
                     val navController = rememberNavController()
-                    val firstEntry = fileManagerDataStore.readFirstEntranceVal.collectAsState(initial = false)
 
-                    NavHost(navController = navController, startDestination = if (firstEntry.value) Routes.Welcome.route else Routes.MainScreen.route) {
+                    NavHost(navController = navController, startDestination = Routes.Welcome.route) {
                         composable(Routes.MainScreen.route) {
                             MainScreen(
                                 mainViewModel,
@@ -113,8 +112,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Routes.Welcome.route) {
-                            WelcomeScreen(navController = navController, mainViewModel)
-                            PermissionGrant(grantPermission = {
+                            WelcomeScreen(navController = navController)
+                            PermissionGrant(fileManagerDataStore, mainViewModel, grantPermission = {
                                 grantPermission()
                             })
                         }
@@ -176,26 +175,29 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun PermissionGrant(
+    fileManagerDataStore: FileManagerDataStoreInterface,
+    mainViewModel: MainViewModel,
     grantPermission: () -> Unit
 ) {
     var showWarnDialog by remember { mutableStateOf(false) }
-    var showDialog by remember { mutableStateOf(true) }
+    val firstEntry = fileManagerDataStore.readFirstEntranceVal.collectAsState(initial = false)
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && showDialog) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && firstEntry.value) {
         AskForPermissionDialog(
             text = "Manage storage is important for this app. Please grant the permission.",
             onCancel = {
-                showDialog = false
+                mainViewModel.saveFirstEntry()
                 showWarnDialog = true
             },
             onProvide = {
-                showDialog = false
+                mainViewModel.saveFirstEntry()
                 grantPermission()
             }
         )
     }
-    else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && showDialog) {
+    else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P && firstEntry.value) {
         FeatureThatRequiresReadExternalStoragePermission()
+        mainViewModel.saveFirstEntry()
     }
 
     if (showWarnDialog)

@@ -1,6 +1,7 @@
 package com.example.filemanager.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -28,45 +29,29 @@ import com.example.filemanager.R
 import com.example.filemanager.utils.Routes
 
 @Composable
-fun WelcomeScreen(navController: NavController, mainViewModel: MainViewModel) {
+fun WelcomeScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Top
     ) {
         Image(
             painter = painterResource(id = R.drawable.folder_management),
             contentDescription = null,
-            modifier = Modifier.size(50.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "Welcome!",
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(
-            onClick = {
-                navController.navigate(Routes.MainScreen.route) {
-                    popUpTo(Routes.Welcome.route) { inclusive = true }
-                }
-                mainViewModel.saveFirstEntry()
-            },
-            shape = RoundedCornerShape(20.dp),
             modifier = Modifier
-                .wrapContentSize()
-                .height(50.dp)
-        ) {
-            Text(
-                color = Color.White,
-                text = "GO",
-                fontSize = 16.sp
-            )
-        }
+                .size(60.dp)
+                .clickable {
+                    navController.navigate(Routes.MainScreen.route) {
+                        popUpTo(Routes.Welcome.route) { inclusive = true }
+                    }
+                }
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "Storage",
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp
+        )
     }
 }
